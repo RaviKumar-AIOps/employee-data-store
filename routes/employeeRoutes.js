@@ -1,27 +1,30 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const upload = require('../middleware/upload');
+const upload = require("../middleware/upload");
 const {
   createEmployee,
   getAllEmployees,
   getEmployee,
-  deleteEmployee // ✅ Add this
-} = require('../controllers/employeeController');
+  deleteEmployee,
+} = require("../controllers/employeeController");
 
-// POST /api/employees - Create employee with photo
+// POST /employees - Create employee with photo
 router.post(
-  '/',
-  upload.single('photo'),
+  "/",
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "aadharFile", maxCount: 1 },
+  ]),
   createEmployee
 );
 
-// GET /api/employees - Get all employees
-router.get('/', getAllEmployees);
+// GET /employees - Get all employees
+router.get("/", getAllEmployees);
 
-// GET /api/employees/:id - Get single employee
-router.get('/:id', getEmployee);
+// GET /employees/:id - Get single employee
+router.get("/:id", getEmployee);
 
-// DELETE /api/employees/:id - Delete employee ✅ Add this
-router.delete('/:id', deleteEmployee);
+// DELETE /employees/:id - Delete employee
+router.delete("/:id", deleteEmployee);
 
 module.exports = router;

@@ -33,13 +33,36 @@ const employeeSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Address cannot exceed 200 characters']
   },
-  aadharNumber: {
-    type: String,
-    required: [true, 'AADHAR number is required'],
-    unique: true,
-    trim: true,
-    match: [/^[0-9]{12}$/, 'Please enter a valid 12-digit AADHAR number']
-  },
+  // aadharNumber: {
+  //   type: String,
+  //   required: [true, 'AADHAR number is required'],
+  //   unique: true,
+  //   trim: true,
+  //   match: [/^[0-9]{12}$/, 'Please enter a valid 12-digit AADHAR number']
+  // },
+  bloodGroup: {
+  type: String,
+  required: true,
+},
+
+aadharFile: {
+  filename: {
+      type: String,
+      required: true
+    },
+    originalName: {
+      type: String,
+      required: true
+    },
+    mimetype: {
+      type: String,
+      required: true
+    },
+    size: {
+      type: Number,
+      required: true
+    }
+},
   photo: {
     filename: {
       type: String,

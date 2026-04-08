@@ -21,15 +21,15 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp','application/pdf'];
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
   
   const ext = path.extname(file.originalname).toLowerCase();
   
   if (allowedMimes.includes(file.mimetype) && allowedExts.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files (JPEG, PNG, WEBP) are allowed!'), false);
+    cb(new Error('Only images or PDF allowed!'), false);
   }
 };
 
@@ -38,7 +38,7 @@ const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
-    files: 1
+    files: 2
   }
 });
 

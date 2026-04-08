@@ -14,12 +14,15 @@ const getPhotoUrl = (req, filename) => {
 // @route   POST /api/employees
 exports.createEmployee = async (req, res, next) => {
   try {
-    if (!req.file) {
+    if (!req.files || !req.files.photo || !req.files.aadharFile) {
       return res.status(400).json({
         success: false,
-        message: "Please upload a passport size photo",
+        message: "Photo and Aadhar file are required",
       });
     }
+
+    const photo = req.files.photo[0];
+    const aadhar = req.files.aadharFile[0];
 
     const {
       firstName,
@@ -27,44 +30,44 @@ exports.createEmployee = async (req, res, next) => {
       email,
       contactNumber,
       residentialAddress,
-      aadharNumber,
+      bloodGroup,
     } = req.body;
 
-    // Check for existing employee
-    const existingEmployee = await Employee.findOne({
-      $or: [{ email }, { aadharNumber }],
-    });
+    // Check existing employee (only email now)
+    const existingEmployee = await Employee.findOne({ email });
 
     if (existingEmployee) {
-      // Delete uploaded file if employee exists
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("Error deleting file:", err);
-        });
-      }
+      // delete uploaded files
+      [photo, aadhar].forEach((file) => {
+        if (file && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      });
 
       return res.status(400).json({
         success: false,
-        message:
-          existingEmployee.email === email
-            ? "Employee with this email already exists"
-            : "Employee with this AADHAR number already exists",
+        message: "Employee with this email already exists",
       });
     }
 
-    // Create employee
     const employee = await Employee.create({
       firstName,
       lastName,
       email,
       contactNumber,
       residentialAddress,
-      aadharNumber,
+      bloodGroup,
       photo: {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
+        filename: photo.filename,
+        originalName: photo.originalname,
+        mimetype: photo.mimetype,
+        size: photo.size,
+      },
+      aadharFile: {
+        filename: aadhar.filename,
+        originalName: aadhar.originalname,
+        mimetype: aadhar.mimetype,
+        size: aadhar.size,
       },
     });
 
@@ -80,10 +83,12 @@ exports.createEmployee = async (req, res, next) => {
       },
     });
   } catch (error) {
-    // Clean up file on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error("Error deleting file:", err);
+    // cleanup both files
+    if (req.files) {
+      Object.values(req.files).flat().forEach((file) => {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
       });
     }
 
@@ -108,9 +113,11 @@ exports.getAllEmployees = async (req, res, next) => {
         lastName: emp.lastName,
         email: emp.email,
         contactNumber: emp.contactNumber,
-        aadharNumber: emp.aadharNumber,
+        // aadharNumber: emp.aadharNumber,
         residentialAddress: emp.residentialAddress,
         photoUrl: getPhotoUrl(req, emp.photo.filename),
+        aadharUrl: getPhotoUrl(req, emp.aadharFile.filename),
+bloodGroup: emp.bloodGroup,
         createdAt: emp.createdAt,
       })),
     });
@@ -140,9 +147,11 @@ exports.getEmployee = async (req, res, next) => {
         lastName: employee.lastName,
         email: employee.email,
         contactNumber: employee.contactNumber,
-        aadharNumber: employee.aadharNumber,
+        // aadharNumber: employee.aadharNumber,
         residentialAddress: employee.residentialAddress,
         photoUrl: getPhotoUrl(req, employee.photo.filename),
+        aadharUrl: getPhotoUrl(req, emp.aadharFile.filename),
+bloodGroup: emp.bloodGroup,
         createdAt: employee.createdAt,
         updatedAt: employee.updatedAt,
       },
@@ -153,7 +162,7 @@ exports.getEmployee = async (req, res, next) => {
 };
 
 // @desc    Delete employee
-// @route   DELETE /api/employees/:id
+// @route   DELETE /employees/:id
 exports.deleteEmployee = async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id);
@@ -174,10 +183,10 @@ exports.deleteEmployee = async (req, res, next) => {
       employee.photo.filename,
     );
     if (fs.existsSync(photoPath)) {
-      fs.unlinkSync(photoPath);
+      fs.unlinkSync(photoPath); // Delete Photo
     }
 
-    await employee.deleteOne();
+    await employee.deleteOne(); // Removes the document from MongoDB
 
     res.status(200).json({
       success: true,
